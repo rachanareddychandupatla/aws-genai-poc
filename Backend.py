@@ -2,6 +2,7 @@ import json
 
 import boto3
 
+#code to handle incoming req using knowledgebase
 client = boto3.client('bedrock-agent-runtime')
 
 def lambda_handler(prompt):

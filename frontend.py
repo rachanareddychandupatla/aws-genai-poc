@@ -1,6 +1,6 @@
 import streamlit as st
 import Backend as backend
-
+#frontend for knowledgebase
 # Page configuration
 st.set_page_config(page_title="Credit Card Recommendation With Amazon Bedrock")
 
