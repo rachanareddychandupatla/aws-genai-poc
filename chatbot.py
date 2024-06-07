@@ -2,10 +2,31 @@ import streamlit as st
 import random
 import time
 import boto3
+import json
+import os
 from botocore.exceptions import BotoCoreError, ClientError
 
 # Initialize Amazon Comprehend client
-comprehend = boto3.client('comprehend', region_name='us-west-2')  # Replace with your preferred region
+comprehend = boto3.client('comprehend', region_name='us-west-2')
+secret_name = "opensearch_serverless_secrets"
+
+st.title("Chat with Bedrock Knowledge Base")
+
+session = boto3.session.Session()
+region_name = session.region_name
+bedrock_client = boto3.client('bedrock-agent-runtime')
+
+client = session.client(
+    service_name='secretsmanager',
+    region_name=region_name
+)
+
+get_secret_value_response = client.get_secret_value(
+    SecretId=secret_name
+)
+
+secret = get_secret_value_response['SecretString']
+parsed_secret = json.loads
 
 # Fixed questions
 fixed_questions = [
@@ -37,16 +58,35 @@ def analyze_text(text):
     except (BotoCoreError, ClientError) as e:
         return f"Error analyzing text: {str(e)}"
 
+def lambda_handler(user_input):
+    response = bedrock_client.retrieve_and_generate(
+        input={"text": user_input},
+        retrieveAndGenerateConfiguration={
+            "knowledgeBaseConfiguration": {
+                "knowledgeBaseId": "ZB2KOJNF6C",
+                "modelArn": f"arn:aws:bedrock:{region_name}::foundation-model/anthropic.claude-v2"
+            },
+            "type": "KNOWLEDGE_BASE"
+        }
+    )
+    print(response)
+    # Extract response
+    return response['output']['text']
+
+
 
 def generate_response_based_on_sentiment(sentiment):
+    response = ''
     if sentiment == "POSITIVE":
-        response = "I can sense you're feeling good about this! Let's continue."
+        response = lambda_handler("Recommend three credit cards for my customer who travels a lot")
     elif sentiment == "NEGATIVE":
-        response = "I'm here to help. Please let me know how I can assist further."
+        response = lambda_handler("Recommend three credit cards for my customer who tarvels a lot")
     elif sentiment == "NEUTRAL":
-        response = "Okay, let's proceed with the next step."
+        response = lambda_handler("Recommend three credit cards for my customer who tarvels a lot")
     else:  # Mixed sentiment
-        response = "I noticed mixed feelings. Could you please provide more details?"
+        response = lambda_handler("Recommend three credit cards for my customer who tarvels a lot")
+
+    print(response)
     return response
 
 # Accept user input
