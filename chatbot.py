@@ -64,27 +64,27 @@ def lambda_handler(user_input):
         retrieveAndGenerateConfiguration={
             "knowledgeBaseConfiguration": {
                 "knowledgeBaseId": "ZB2KOJNF6C",
-                "modelArn": f"arn:aws:bedrock:{region_name}::foundation-model/anthropic.claude-v2"
+                "modelArn": f"arn:aws:bedrock:{region_name}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0"
             },
             "type": "KNOWLEDGE_BASE"
         }
     )
+
     print(response)
     # Extract response
     return response['output']['text']
 
 
-
 def generate_response_based_on_sentiment(sentiment):
     response = ''
     if sentiment == "POSITIVE":
-        response = lambda_handler("Recommend three credit cards for my customer who travels a lot")
+        response = lambda_handler("Recommend three credit cards for me and I travel a lot")
     elif sentiment == "NEGATIVE":
-        response = lambda_handler("Recommend three credit cards for my customer who tarvels a lot")
+        response = lambda_handler("Recommend three credit cards for me and I travel a lot")
     elif sentiment == "NEUTRAL":
-        response = lambda_handler("Recommend three credit cards for my customer who tarvels a lot")
-    else:  # Mixed sentiment
-        response = lambda_handler("Recommend three credit cards for my customer who tarvels a lot")
+        response = lambda_handler("Recommend three credit cards for me and I travel a lot")
+    else:  # Mixed
+        response = lambda_handler("Recommend three credit cards for me and I travel a lot")
 
     print(response)
     return response
