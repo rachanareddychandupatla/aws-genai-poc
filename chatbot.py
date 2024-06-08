@@ -9,24 +9,17 @@ from botocore.exceptions import BotoCoreError, ClientError
 # Initialize Amazon Comprehend client
 comprehend = boto3.client('comprehend', region_name='us-west-2')
 secret_name = "opensearch_serverless_secrets"
+botId = "KEMOTTFRR5"
+botAliasId = "ZKDELTLUJT"
+localeId = "en_US"
+sessionId = "100"
 
 st.title("Chat with Bedrock Knowledge Base")
 
 session = boto3.session.Session()
 region_name = session.region_name
 bedrock_client = boto3.client('bedrock-agent-runtime')
-
-client = session.client(
-    service_name='secretsmanager',
-    region_name=region_name
-)
-
-get_secret_value_response = client.get_secret_value(
-    SecretId=secret_name
-)
-
-secret = get_secret_value_response['SecretString']
-parsed_secret = json.loads
+bot_client = boto3.client('lexv2-runtime')
 
 # Fixed questions
 fixed_questions = [
@@ -89,6 +82,11 @@ def generate_response_based_on_sentiment(sentiment):
     print(response)
     return response
 
+def sleep_bt_response(response):
+    for word in response.split():
+        yield word + " "
+        time.sleep(0.05)
+
 # Accept user input
 if prompt := st.chat_input("Ask me anything?"):
     # Display user message in chat message container
@@ -99,25 +97,36 @@ if prompt := st.chat_input("Ask me anything?"):
     # Append user response to the list
     st.session_state.user_responses.append(prompt)
 
+    lex_response = bot_client.recognize_text(
+        botId=botId,
+        botAliasId=botAliasId,
+        localeId=localeId,
+        sessionId=sessionId,
+        text=prompt
+    )
+
     # Check if all fixed questions have been answered
     if st.session_state.step < len(fixed_questions):
         # Generate next fixed question
-        response = fixed_questions[st.session_state.step]
+        #response = fixed_questions[st.session_state.step]
+        print(lex_response)
+        bot_response = lex_response['messages'][0]['content']
+        print(bot_response)
         st.session_state.step += 1
 
         with st.chat_message("assistant"):
-            st.markdown(response)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+            st.write_stream(sleep_bt_response(bot_response))
+        st.session_state.messages.append({"role": "assistant", "content": bot_response})
     else:
         # Combine all user inputs into a single string for analysis
         combined_text = " ".join(st.session_state.user_responses)
         analysis_result = analyze_text(combined_text)
-        final_response = generate_response_based_on_sentiment(analysis_result)
+        #final_response = generate_response_based_on_sentiment(analysis_result)
 
         with st.chat_message("assistant"):
             st.markdown(f"Final analysis of your responses: {analysis_result}")
-            st.markdown(f"{final_response}")
-        st.session_state.messages.append({"role": "assistant", "content": f"final analysis of your responses: {final_response}"})
+            #st.markdown(f"{final_response}")
+        #st.session_state.messages.append({"role": "assistant", "content": f"final analysis of your responses: {final_response}"})
 
 
 # Streamed initial response
@@ -127,7 +136,7 @@ def response_generator():
             [
                 "Hello there! How can I assist you today?",
                 "Hi, human! Is there anything I can help you with?",
-                "Do you need help?",
+                "Hello there! What do you need help with?",
             ]
         )
         st.session_state.step += 1  # Move to next step for fixed questions
